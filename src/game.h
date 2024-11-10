@@ -19,7 +19,7 @@ WINDOW * win_playfield; // Actual playfield window
 WINDOW * win_next; // Window that shows the next block
 WINDOW * win_controls; // Window that display the commands
 WINDOW * win_stats; // Window that display the statistics
-WINDOW * win_pause;
+WINDOW * win_pause; // TO DO: When 
 
 typedef struct statistics {
     unsigned int points;
@@ -37,18 +37,21 @@ extern POSITION tetraminoes[7][4][4];
 
 void game_play();
 void game_win_create();
-Matrix game_playfield_array(int height, int width);
-void game_stats_update(STATISTICS score);
+Matrix game_playfield_matrix(int height, int width);
 void game_playfield_update(Matrix game_array);
 void game_draw_piece(Matrix game_array, int y, int x, int type, int orientation, int del);
+void game_stats_update(STATISTICS score);
+int game_check_position(int y, int x, int type, int orientation);
 // Lock Piece
 bool game_check_row(int row);
 // Delete Line
 // Clear Lines
 // Check Gameover
 // Save points
+// Pause Game
+// Save points
 void init_colors();
 void debug_colors();
-void game_win_delete();
+void game_win_delete(Matrix game_array);
 
 #endif
