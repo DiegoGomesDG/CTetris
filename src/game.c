@@ -68,17 +68,20 @@ void game_play() {
     nodelay(win_game, TRUE);
 
     game_draw_piece(game_matrix, y, x, current, rotation, 0);
+    game_update_next(next, 0);
     while (ch != 'q') {
         ch = wgetch(win_game);
-        mvwprintw(win_game, 1, 1, "Y: %02d", y);
-        mvwprintw(win_game, 2, 1, "X: %02d", x);
+        // mvwprintw(win_game, 1, 1, "Y: %02d", y);
+        // mvwprintw(win_game, 2, 1, "X: %02d", x);
         switch(ch) {
 
             case (' '):
                 game_draw_piece(game_matrix, y, x, current, rotation, 1);
                 current++;
                 current = current % 7;
+                next = (next + 1) % 7;
                 game_draw_piece(game_matrix, y, x, current, rotation, 0);
+                game_update_next(next, rotation);
                 break;
 
             case KEY_UP:
@@ -222,15 +225,36 @@ void game_draw_piece(Matrix game_matrix, int y, int x, int type, int orientation
 
 }
 
+void game_update_next(int type, int orientation) {
+
+    POSITION pos;
+    int y = 3, x = 5;
+
+    // Reset 
+    wattrset(win_next, COLOR_PAIR(0));
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++)
+            mvwaddstr(win_next, y + i, x + j*2, SQUARE);
+
+    wrefresh(win_next);
+    for (int i = 0; i < 4; i++) {
+        pos = tetraminoes[type][orientation][i];
+        wattrset(win_next, COLOR_PAIR(type + 1));
+        mvwaddstr(win_next, y + pos.y, x + pos.x*2, SQUARE);
+    }
+    wrefresh(win_next);
+
+}
+
 void game_playfield_update(Matrix game_matrix) {
 
     // Update from left to right, top to down
     for (int y = 4; y < PLAYFIELD_Y; y++) {
         for (int x = 0; x < PLAYFIELD_X; x++) {
             wattrset(win_playfield, COLOR_PAIR(game_matrix[y][x]));
-            wattrset(win_game, COLOR_PAIR(game_matrix[y][x]));
+            // wattrset(win_game, COLOR_PAIR(game_matrix[y][x]));
             mvwprintw(win_playfield, y, x*2, SQUARE);
-            mvwprintw(win_game, 6 + y, 1 + x*2, "%d ", game_matrix[y][x]);
+            // mvwprintw(win_game, 6 + y, 1 + x*2, "%d ", game_matrix[y][x]);
         }
     }
 
@@ -243,14 +267,14 @@ int game_check_position(int y, int x, int type, int orientation) {
     POSITION pos;
     for (int i = 0; i < 4; i++) {
         pos = tetraminoes[type][orientation][i];
-        mvwprintw(win_game, 3 + i, 1, "pos[%d]: y = %02d & x = %02d", i, y + pos.y, x + pos.x);
+        // mvwprintw(win_game, 3 + i, 1, "pos[%d]: y = %02d & x = %02d", i, y + pos.y, x + pos.x);
         // LEFT || RIGHT || UP
         if (x + pos.x < 0 || x + pos.x >= PLAYFIELD_X || y + pos.y > PLAYFIELD_Y - 1) {
-            mvwprintw(win_game, 8, 1, "Allowed: FALSE");
+            // mvwprintw(win_game, 8, 1, "Allowed: FALSE");
             return 0;
         }
     }
-    mvwprintw(win_game, 8, 1, "Allowed: TRUE ");
+    // mvwprintw(win_game, 8, 1, "Allowed: TRUE ");
     return 1;
 }
 

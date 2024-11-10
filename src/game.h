@@ -42,6 +42,7 @@ void game_playfield_update(Matrix game_array);
 void game_draw_piece(Matrix game_array, int y, int x, int type, int orientation, int del);
 void game_stats_update(STATISTICS score);
 int game_check_position(int y, int x, int type, int orientation);
+void game_update_next(int type, int orientation);
 // Lock Piece
 bool game_check_row(int row);
 // Delete Line
