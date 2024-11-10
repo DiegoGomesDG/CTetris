@@ -1,5 +1,7 @@
 #include "game.h"
 
+
+
 void game_win_create() {
 
     // Create general window of same size as the terminal
