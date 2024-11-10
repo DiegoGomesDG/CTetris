@@ -8,8 +8,17 @@ int main(int argc, char * argv[]) {
     curs_set(0);
 
     int option = menu();
-    if (option == 0) {
-        game_window_create();
+    switch (option) {
+
+        case 0: game_play();
+                break;
+        case 1: // To be implemented
+                break;
+        case 2: // To be implemented
+                break;
+        case 3: endwin(); return 0;
+        default: endwin(); return 1;
+
     }
 
     endwin();
