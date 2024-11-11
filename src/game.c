@@ -92,9 +92,9 @@ void game_play() {
                 } else {
                     game_draw_piece(game_matrix, y, x, current, rotation, 1);
                     while(game_check_position(y, x, current, rotation + 1 == 4 ? 0 : rotation + 1) == 0) {
+                        if (y > 20) y--;
                         if (x < PLAYFIELD_X/2) x++;
                         if (x > 0) x--;
-                        if (y > 20) y--;
                     }
 					++rotation == 4 ? rotation = 0 : 0;
 					game_draw_piece(game_matrix, y, x, current, rotation, 0);
@@ -235,6 +235,8 @@ void game_update_next(int type, int orientation) {
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
             mvwaddstr(win_next, y + i, x + j*2, SQUARE);
+
+    if (!(type == 0 || type == 1)) {x++; y++;}
 
     wrefresh(win_next);
     for (int i = 0; i < 4; i++) {
