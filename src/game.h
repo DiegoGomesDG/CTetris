@@ -3,6 +3,7 @@
 
 #include <ncurses.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define SQUARE "  "
 #define PLAYFIELD_Y 24
@@ -38,11 +39,12 @@ extern POSITION tetraminoes[7][4][4];
 void game_play();
 void game_win_create();
 Matrix game_playfield_matrix(int height, int width);
-void game_playfield_update(Matrix game_array);
-void game_draw_piece(Matrix game_array, int y, int x, int type, int orientation, int del);
+void game_draw_piece(int y, int x, int type, int orientation, int del);
 void game_stats_update(STATISTICS score);
-int game_check_position(int y, int x, int type, int orientation);
-void game_update_next(int type, int orientation);
+bool game_check_position(Matrix game_matrix, int y, int x, int type, int orientation);
+void game_update_next(int type);
+int game_drop_piece (Matrix game_matrix, int type);
+void game_lock_piece(Matrix game_matrix, int y, int x, int type, int orientation);
 // Lock Piece
 bool game_check_row(int row);
 // Delete Line

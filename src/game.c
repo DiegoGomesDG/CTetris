@@ -57,76 +57,25 @@ void game_play() {
 
     STATISTICS score;
     score.points = 0, score.lines = 0;
-    int current = 0, next = 1;
+    srand(time(NULL));
 
     game_win_create();
     Matrix game_matrix = game_playfield_matrix(PLAYFIELD_Y, PLAYFIELD_X);
-    
-    int ch;
-    int rotation = 0, prev_rot;
-    int y = 4, x = 3;
     nodelay(win_game, TRUE);
 
-    game_draw_piece(game_matrix, y, x, current, rotation, 0);
-    game_update_next(next, 0);
-    while (ch != 'q') {
-        ch = wgetch(win_game);
-        // mvwprintw(win_game, 1, 1, "Y: %02d", y);
-        // mvwprintw(win_game, 2, 1, "X: %02d", x);
-        switch(ch) {
+    int current = rand() % 7, next;
+    
+    while(1) {
 
-            case (' '):
-                game_draw_piece(game_matrix, y, x, current, rotation, 1);
-                current++;
-                current = current % 7;
-                next = (next + 1) % 7;
-                game_draw_piece(game_matrix, y, x, current, rotation, 0);
-                game_update_next(next, rotation);
-                break;
-
-            case KEY_UP:
-                if (game_check_position(y, x, current, rotation + 1 == 4 ? 0 : rotation + 1)) {
-                    game_draw_piece(game_matrix, y, x, current, rotation, 1);
-					++rotation == 4 ? rotation = 0 : 0;
-					game_draw_piece(game_matrix, y, x, current, rotation, 0);
-                } else {
-                    game_draw_piece(game_matrix, y, x, current, rotation, 1);
-                    while(game_check_position(y, x, current, rotation + 1 == 4 ? 0 : rotation + 1) == 0) {
-                        if (y > 20) y--;
-                        if (x < PLAYFIELD_X/2) x++;
-                        if (x > 0) x--;
-                    }
-					++rotation == 4 ? rotation = 0 : 0;
-					game_draw_piece(game_matrix, y, x, current, rotation, 0);
-                }
-                break;
-
-            case KEY_LEFT:
-                if (game_check_position(y , x - 1, current, rotation)) {
-                    game_draw_piece(game_matrix, y, x, current, rotation, 1);
-                    game_draw_piece(game_matrix, y, --x, current, rotation, 0);
-                }
-                break;
-
-            case KEY_RIGHT:
-                if (game_check_position(y , x + 1, current, rotation)){
-                    game_draw_piece(game_matrix, y, x, current, rotation, 1);
-                    game_draw_piece(game_matrix, y, ++x, current, rotation, 0);
-                }
-                break;
-
-            case KEY_DOWN:
-                if (game_check_position(y + 1, x, current, rotation)){
-                    game_draw_piece(game_matrix, y, x, current, rotation, 1);
-                    game_draw_piece(game_matrix, ++y, x, current, rotation, 0);
-                }
-                break;
-        default: break;
-        }
-        game_playfield_update(game_matrix);
+        next = rand() % 7;
+        game_update_next(next);
+        game_drop_piece(game_matrix, current);
+        
+        current = next;
     }
 
     game_win_delete(game_matrix);
+    
 }
 
 void game_win_create() {
@@ -213,24 +162,29 @@ Matrix game_playfield_matrix(int height, int width) {
 
 }
 
-void game_draw_piece(Matrix game_matrix, int y, int x, int type, int orientation, int del) {
+void game_draw_piece(int y, int x, int type, int orientation, int del) {
 
     POSITION pos;
 
     for (int i = 0; i < 4; i++) {
         pos = tetraminoes[type][orientation][i];
-        if (del) game_matrix[y + pos.y][x + pos.x] = 0;
-        else game_matrix[y + pos.y][x + pos.x] = type + 1;
+        if (del || y + pos.y < 4) {
+            wattrset(win_playfield, COLOR_PAIR(0));
+            mvwaddstr(win_playfield, y + pos.y, x*2 + pos.x*2, SQUARE);
+        }
+        else {
+            wattrset(win_playfield, COLOR_PAIR(type + 1));
+            mvwaddstr(win_playfield, y + pos.y, x*2 + pos.x*2, SQUARE);
+        }
     }
-
 }
 
-void game_update_next(int type, int orientation) {
+void game_update_next(int type) {
 
     POSITION pos;
     int y = 3, x = 5;
 
-    // Reset 
+    // Clear the previous piece 
     wattrset(win_next, COLOR_PAIR(0));
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
@@ -238,9 +192,8 @@ void game_update_next(int type, int orientation) {
 
     if (!(type == 0 || type == 1)) {x++; y++;}
 
-    wrefresh(win_next);
     for (int i = 0; i < 4; i++) {
-        pos = tetraminoes[type][orientation][i];
+        pos = tetraminoes[type][0][i];
         wattrset(win_next, COLOR_PAIR(type + 1));
         mvwaddstr(win_next, y + pos.y, x + pos.x*2, SQUARE);
     }
@@ -248,36 +201,99 @@ void game_update_next(int type, int orientation) {
 
 }
 
-void game_playfield_update(Matrix game_matrix) {
-
-    // Update from left to right, top to down
-    for (int y = 4; y < PLAYFIELD_Y; y++) {
-        for (int x = 0; x < PLAYFIELD_X; x++) {
-            wattrset(win_playfield, COLOR_PAIR(game_matrix[y][x]));
-            // wattrset(win_game, COLOR_PAIR(game_matrix[y][x]));
-            mvwprintw(win_playfield, y, x*2, SQUARE);
-            // mvwprintw(win_game, 6 + y, 1 + x*2, "%d ", game_matrix[y][x]);
-        }
-    }
-
-    wrefresh(win_playfield);
-
-}
-
-int game_check_position(int y, int x, int type, int orientation) {
+bool game_check_position(Matrix game_matrix, int y, int x, int type, int orientation) {
     
     POSITION pos;
     for (int i = 0; i < 4; i++) {
         pos = tetraminoes[type][orientation][i];
-        // mvwprintw(win_game, 3 + i, 1, "pos[%d]: y = %02d & x = %02d", i, y + pos.y, x + pos.x);
-        // LEFT || RIGHT || UP
-        if (x + pos.x < 0 || x + pos.x >= PLAYFIELD_X || y + pos.y > PLAYFIELD_Y - 1) {
-            // mvwprintw(win_game, 8, 1, "Allowed: FALSE");
-            return 0;
+        mvwprintw(win_game, 3 + i, 1, "pos[%d]: y = %02d & x = %02d", i, y + pos.y, x + pos.x);
+        // LEFT || RIGHT || UP || OTHER
+        if (x + pos.x < 0 || x + pos.x >= PLAYFIELD_X || y + pos.y > PLAYFIELD_Y - 1 || (game_matrix[y + pos.y][x + pos.x] > 0)) {
+            mvwprintw(win_game, 8, 1, "Allowed: FALSE");
+            return FALSE;
         }
     }
-    // mvwprintw(win_game, 8, 1, "Allowed: TRUE ");
-    return 1;
+    mvwprintw(win_game, 8, 1, "Allowed: TRUE ");
+    return TRUE;
+}
+
+void game_lock_piece(Matrix game_matrix, int y, int x, int type, int orientation) {
+    POSITION pos;
+    
+    for (int i = 0; i < 4; i++) {
+        pos = tetraminoes[type][orientation][i];
+        game_matrix[y + pos.y][x + pos.x] = type + 1;
+    }
+}
+
+int game_drop_piece(Matrix game_matrix, int type) {
+
+    int y = 0; 
+    int x = PLAYFIELD_X/2 - 2;
+    int orientation = 0;
+
+    int ch = ' ';
+    game_draw_piece(y, x, type, orientation, 0);
+
+    while (1) {
+        
+        ch = wgetch(win_game);
+        mvwprintw(win_game, 1, 1, "Y: %02d", y);
+        mvwprintw(win_game, 2, 1, "X: %02d", x);
+        
+        switch(ch) {
+
+            case KEY_UP:
+                if (game_check_position(game_matrix, y, x, type, orientation + 1 == 4 ? 0 : orientation + 1)) {
+                    game_draw_piece(y, x, type, orientation, 1);
+					++orientation == 4 ? orientation = 0 : 0;
+					game_draw_piece(y, x, type, orientation, 0);
+                } /* else {
+                    game_draw_piece(y, x, type, orientation, 1);
+                    while(game_check_position(game_matrix, y, x, type, orientation + 1 == 4 ? 0 : orientation + 1 ) == 0) {
+                        if (x < PLAYFIELD_X/2) x++;
+                        if (x > 0) x--;
+                        if (y > 20) y--;
+                    }
+					++orientation == 4 ? orientation = 0 : 0;
+					game_draw_piece(y, x, type, orientation, 0);
+                } */
+                break; 
+
+            case KEY_LEFT:
+                if (game_check_position(game_matrix, y , x - 1, type, orientation)) {
+                    game_draw_piece(y, x, type, orientation, 1);
+                    game_draw_piece(y, --x, type, orientation, 0);
+                } break;
+
+            case KEY_RIGHT:
+                if (game_check_position(game_matrix, y , x + 1, type, orientation)) {
+                    game_draw_piece(y, x, type, orientation, 1);
+                    game_draw_piece(y, ++x, type, orientation, 0);
+                } break;
+
+            case KEY_DOWN:
+                if (game_check_position(game_matrix, y + 1, x, type, orientation)) {
+                    game_draw_piece(y, x, type, orientation, 1);
+                    game_draw_piece(++y, x, type, orientation, 0);
+                } break;
+
+        }
+
+        if (1) {
+            if (game_check_position(game_matrix, y + 1, x, type, orientation)) {
+                game_draw_piece(y, x, type, orientation, 1);
+                game_draw_piece(++y, x, type, orientation, 0);
+            } else {
+                game_lock_piece(game_matrix, y, x, type, orientation);
+                return 0;
+            }
+        }
+        napms(100);
+
+        wrefresh(win_playfield);
+    }
+
 }
 
 bool game_check_row(int row) {
@@ -290,6 +306,17 @@ void game_stats_update(STATISTICS score) {
     mvwprintw(win_stats, 4, 3, "Lines  %05d", score.lines);
     wrefresh(win_stats);
 
+}
+
+void game_win_delete(Matrix game_matrix) {
+    free(game_matrix);
+    delwin(win_playfield);
+    delwin(win_border);
+    delwin(win_stats);
+    delwin(win_next);
+    delwin(win_controls);
+    delwin(win_pause);
+    delwin(win_game);
 }
 
 void init_colors() {
@@ -310,17 +337,6 @@ void init_colors() {
     init_pair(8, COLOR_WHITE, COLOR_WHITE); // Border
 
 }
-
-void game_win_delete(Matrix game_matrix) {
-    free(game_matrix);
-    delwin(win_playfield);
-    delwin(win_border);
-    delwin(win_stats);
-    delwin(win_next);
-    delwin(win_controls);
-    delwin(win_pause);
-    delwin(win_game);
-};
 
 void debug_colors() {
     for (int i = 1; i < 8; i++) {
