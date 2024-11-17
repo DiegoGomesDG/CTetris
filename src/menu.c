@@ -70,8 +70,8 @@ void menu_highlight_option(WINDOW * menu, char * option[], int optnum) {
 /* Auxiliary function which prints the text centered to the window*/
 void center_string(WINDOW * win, int row, char * str) {
     
-    int winy, winx;
-    getmaxyx(win, winy, winx);
+    int winx;
+    winx = getmaxx(win);
 
     int str_length = strlen(str);
     int center = winx - str_length;
