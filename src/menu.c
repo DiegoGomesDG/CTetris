@@ -1,20 +1,22 @@
 #include "menu.h"
 
+/* Generates the menu, display the options and returns the choosed option */
 int menu() {
 
     int winx, winy;
     int key, menuoption = 0;
     getmaxyx(stdscr, winy, winx);
     
+    // Creates the subwindow
     WINDOW * menu = subwin(stdscr, WIN_MENUY, WIN_MENUX, (winy - WIN_MENUY)/2, (winx - WIN_MENUX)/2);
     if (menu == NULL) {
         waddstr(stdscr, "Error!");
-        exit(1);
+        exit(-1);
     }
 
-    // Activate
+    // Activate keypad input,
     keypad(menu, TRUE);
-    noecho();
+    noecho(); // Disables the character appearing in the screen
     
     // Options
     char * options[] = {
@@ -24,14 +26,14 @@ int menu() {
         " Exit "
     };
     
-    // Draw the box
+    // Draw box around the window
     box(menu, 0, 0);
 
     // Add TETRIS title, print menu with first highlighted
     center_string(menu, 0, "TETRIS");
     menu_highlight_option(menu, options, menuoption);
     
-    // Highlight Option and Choose the Option
+    // Highlight Options and Choose the Option using arrow keys
     do {
         key = wgetch(menu);
         switch (key) {
@@ -47,11 +49,12 @@ int menu() {
         }
         menu_highlight_option(menu, options, menuoption);
     } while (key != '\n');
-    
+    werase(menu);
     delwin(menu);
     return menuoption;
 }
 
+/* Auxiliary function responsible for highlighting the current option */
 void menu_highlight_option(WINDOW * menu, char * option[], int optnum) {
 
     for (int c = 0; c < MENU_OPTION_COUNT; c++) {
@@ -64,7 +67,8 @@ void menu_highlight_option(WINDOW * menu, char * option[], int optnum) {
 
 }
 
-void center_string (WINDOW * win, int row, char * str) {
+/* Auxiliary function which prints the text centered to the window*/
+void center_string(WINDOW * win, int row, char * str) {
     
     int winy, winx;
     getmaxyx(win, winy, winx);

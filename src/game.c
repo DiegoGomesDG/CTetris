@@ -1,6 +1,6 @@
 #include "game.h"
 
-// TETRAMINOES [NUMBER][ROTATION][POSITION]
+/* TETRAMINOES [NUMBER][ROTATION][POSITION] */
 POSITION tetraminoes[7][4][4] = {
     // From left to right, top to bottom
     {
@@ -53,9 +53,11 @@ POSITION tetraminoes[7][4][4] = {
     }
 };
 
+/* Main game loop */
 void game_play() {
 
     bool status = FALSE;
+    int returnval = 1;
     STATS score;
     score.points = 0, score.lines = 0;
 
@@ -70,48 +72,52 @@ void game_play() {
     int current = rand() % 7, next;
     
     while(!status) {
-
         next = rand() % 7;
         game_update_next(next);
-        score.points += game_drop_piece(game_matrix, current);
+        returnval = game_drop_piece(game_matrix, current);
+        score.points += returnval;
         score = game_check_playfield(game_matrix, score);
         game_stats_update(score);
-        status = game_check_gameover(game_matrix);// check game over
+        status = game_check_gameover(game_matrix);
+        if (returnval == -1) status = TRUE;
         current = next;
     }
 
-    gameover_win();
-    napms(1000 * 10);
+    // If the Quit Button was not pressed
+    if (returnval != -1) {
+        gameover_win();
+        napms(1000 * 5);
+    }
+    save_score(score);
     game_win_delete(game_matrix);
-    
     
 }
 
+/* Creates the game window and initialises the subwindows */
 void game_win_create() {
 
-    // Create general window of same size as the terminal
+    // Create general game window of same size as the terminal
     win_game = newwin(0,0,0,0);
     if (win_game == NULL) {
-        waddstr(stdscr, "Error!");
-        exit(1);
+        waddstr(stdscr, "Error generating the win_game!");
+        exit(-1);
     }
 
+    // Get size of the terminal, initialise colors and allow for keypad input
     int win_gamex, win_gamey;
     getmaxyx(win_game, win_gamey, win_gamex);
     touchwin(win_game);
     init_colors();
     keypad(win_game, true);
 
-    // Create playfield border window
+    // Create playfield border subwindow
     win_border = subwin(win_game, BORDER_Y, BORDER_X, (win_gamey - BORDER_Y)/2, (win_gamex - BORDER_X)/2);
-
     if (win_border == NULL) {
-        waddstr(stdscr, "Error!");
-        endwin();
-        exit(1);
+        waddstr(stdscr, "Error generating the win_border!");
+        exit(-1);
     }
 
-    // Draw Borders (Left, Right, Bottom)
+    // Draw Borders (Left, Right, Bottom) into win_border
     wattron(win_border, COLOR_PAIR(8));
     for (int y = 4; y < BORDER_Y; y++)
         mvwaddstr(win_border, y, 0, SQUARE);
@@ -124,13 +130,12 @@ void game_win_create() {
 
     wattroff(win_border, COLOR_PAIR(8));
     
-    // Create actual playfield window
+    // Initialise actual playfield subwindow
     win_playfield = derwin(win_border, PLAYFIELD_Y, WIN_PLAYFIELD_X, 0, 2);
-    
 
-    // Create controls info window
+    // Initialise controls subwindow
     win_controls = subwin(win_game, CONTROL_Y, CONTROL_X, (win_gamey - CONTROL_Y)/2 + 7, (win_gamex - BORDER_Y)/2 - CONTROL_X + 1);
-    box(win_controls, 0, 0);
+    box(win_controls, 0, 0); // Draws box around window
 
     char * controls[] = {
         "<-  Move Left",
@@ -146,12 +151,12 @@ void game_win_create() {
     for (int txt = 0; txt < 7; txt++)
         mvwaddstr(win_controls, 3 + txt, 2, controls[txt]);
     
-    // Create Next Block Window
+    // Initialise Next Block subwindow
     win_next = subwin(win_game, 9, 18, (win_gamey - 9)/2 - 2, (win_gamex - BORDER_Y)/2 + BORDER_X + 5);
     box(win_next, 0, 0);
     mvwaddstr(win_next, 1, 4, "NEXT PIECE");
 
-    // Initialise the STATS window
+    // Initialise the STATS subwindow
     win_stats = subwin(win_game, 7, 18, (win_gamey - 7)/2 - 3, (win_gamex - BORDER_Y)/2 - CONTROL_X + 1);
     if (win_stats == NULL) exit(2);
     box(win_stats, 0, 0);
@@ -162,6 +167,7 @@ void game_win_create() {
 
 }
 
+/* Allocate memory dynamically for the 2D Array which keeps track of the pieces */
 Matrix game_playfield_matrix(int height, int width) {
 
     Matrix game_matrix = (int **)calloc(height, sizeof(int *));
@@ -172,6 +178,7 @@ Matrix game_playfield_matrix(int height, int width) {
 
 }
 
+/* Updates the playfield subwindow according to the current state of the matrix */
 void game_playfield_update(Matrix game_matrix) {
 
     // Update from left to right, top to down
@@ -188,6 +195,7 @@ void game_playfield_update(Matrix game_matrix) {
 
 }
 
+/* Generates a piece into the playfield according to the position, type, orientation. Or erases the piece */
 void game_draw_piece(int y, int x, int type, int orientation, int del) {
 
     POSITION pos;
@@ -205,6 +213,7 @@ void game_draw_piece(int y, int x, int type, int orientation, int del) {
     }
 }
 
+/* Displays the next piece that will be placed into the playfield in the subwindow win_next */
 void game_update_next(int type) {
 
     POSITION pos;
@@ -227,22 +236,24 @@ void game_update_next(int type) {
 
 }
 
+/* Returns FALSE if a piece collides with the left, right and bottom borders or if collides with a locked piece. Returns TRUE, which means that the position is valid */
 bool game_check_position(Matrix game_matrix, int y, int x, int type, int orientation) {
     
     POSITION pos;
     for (int i = 0; i < 4; i++) {
         pos = tetraminoes[type][orientation][i];
         mvwprintw(win_game, 3 + i, 1, "pos[%d]: y = %02d & x = %02d", i, y + pos.y, x + pos.x);
-        // LEFT || RIGHT || UP || OTHER
+        // LEFT || RIGHT || UP || OTHER PIECE
         if (x + pos.x < 0 || x + pos.x >= PLAYFIELD_X || y + pos.y > PLAYFIELD_Y - 1 || (game_matrix[y + pos.y][x + pos.x] > 0)) {
             mvwprintw(win_game, 8, 1, "Allowed: FALSE");
-            return FALSE;
+            return FALSE; /* Not Allowed */
         }
     }
     mvwprintw(win_game, 8, 1, "Allowed: TRUE ");
     return TRUE;
 }
 
+/* Writes the position of the piece into the matrix */
 void game_lock_piece(Matrix game_matrix, int y, int x, int type, int orientation) {
     POSITION pos;
     
@@ -252,12 +263,14 @@ void game_lock_piece(Matrix game_matrix, int y, int x, int type, int orientation
     }
 }
 
+/* Core function that is responsible for dropping the piece. Receives input for the pieces movement or for pausing and quitting the game. Returns a status or the points scored by executing a soft or hard drop */
 int game_drop_piece(Matrix game_matrix, int type) {
 
     int y = 0; 
     int x = PLAYFIELD_X/2 - 2;
     int orientation = 0;
     int soft = 0, hard = 0;
+    int pause = 1;
 
     fd_set t1, t2;
 	struct timeval timeout;
@@ -269,7 +282,7 @@ int game_drop_piece(Matrix game_matrix, int type) {
     FD_ZERO(&t1);			//initialise
 	FD_SET(0, &t1);
 
-    int ch = ' ';
+    int ch = '\n';
     int delay = 0;
     game_draw_piece(y, x, type, orientation, 0);
 
@@ -285,19 +298,31 @@ int game_drop_piece(Matrix game_matrix, int type) {
             case KEY_UP:
                 if (game_check_position(game_matrix, y, x, type, orientation + 1 == 4 ? 0 : orientation + 1)) {
                     game_draw_piece(y, x, type, orientation, 1);
-					++orientation == 4 ? orientation = 0 : 0;
+					if(++orientation == 4) orientation = 0;
 					game_draw_piece(y, x, type, orientation, 0);
-                } /* else {
-                    game_draw_piece(y, x, type, orientation, 1);
-                    while(game_check_position(game_matrix, y, x, type, orientation + 1 == 4 ? 0 : orientation + 1 ) == 0) {
-                        if (x < PLAYFIELD_X/2) x++;
-                        if (x > 0) x--;
-                        if (y > 20) y--;
+                } else {
+                    // Wall Kick - Try to shift to the right
+                    for (int try = 1; try <= 2; try++) {
+                        if (game_check_position(game_matrix, y, x + try, type, orientation + 1 == 4 ? 0 : orientation + 1)) {
+                            game_draw_piece(y, x, type, orientation, 1);
+					        if(++orientation == 4) orientation = 0;
+                            x += try;
+					        game_draw_piece(y, x, type, orientation, 0);
+                            break;
+                        }    
                     }
-					++orientation == 4 ? orientation = 0 : 0;
-					game_draw_piece(y, x, type, orientation, 0);
-                } */
-                soft++; break; 
+
+                    // Wall Kick - Try to shift to the left
+                    for (int try = 1; try <= 2; try++) {
+                        if (game_check_position(game_matrix, y, x - try, type, orientation + 1 == 4 ? 0 : orientation + 1)) {
+                            game_draw_piece(y, x, type, orientation, 1);
+					        if(++orientation == 4) orientation = 0;
+                            x -= try;
+					        game_draw_piece(y, x, type, orientation, 0);
+                            break;
+                        }    
+                    }
+                } break; 
 
             case KEY_LEFT:
                 if (game_check_position(game_matrix, y , x - 1, type, orientation)) {
@@ -328,11 +353,21 @@ int game_drop_piece(Matrix game_matrix, int type) {
                 wrefresh(win_playfield);
                 return 2*hard; // Hard Drop
 
+            case 'p':
+                pause = 0;
+                pause = game_pause();
+                if (pause == -1) return -1;
+                game_playfield_update(game_matrix);
+                break;
+
+            case 'q':
+                return -1;
+                break;
         }
 
+        wrefresh(win_playfield);
         if (sel_ret == 0) {
-            if (game_check_position(game_matrix, y + 1, x, type, orientation)) {
-
+            if (game_check_position(game_matrix, y + 1, x, type, orientation) && pause) {
                 game_draw_piece(y, x, type, orientation, 1);
                 game_draw_piece(++y, x, type, orientation, 0);
             } else {
@@ -349,7 +384,7 @@ int game_drop_piece(Matrix game_matrix, int type) {
 
 }
 
-/* Takes the Game Matrix (2D Array) and a row number, returns TRUE if it is full, FALSE otherwise*/
+/* Takes the Game Matrix and a row number. Returns TRUE if the row is full, FALSE otherwise*/
 bool game_check_row(Matrix game_matrix, int row) {
     
     if (row > PLAYFIELD_Y) return FALSE;
@@ -362,22 +397,25 @@ bool game_check_row(Matrix game_matrix, int row) {
     return TRUE;
 }
 
+/* Takes the Game Matrix and a row number. Erases the row and shifts the pieces down */
 void game_remove_row(Matrix game_matrix, int row) {
 
-    // Set row to 0
+    /* Set row to 0 */
     for (int x = 0; x < PLAYFIELD_X; x++)
         game_matrix[row][x] = 0;
 
-    // Shift all the above
+    /* Shifts all the above */
     for (int y = row - 1; y > 0; y--) {
         for (int x = 0; x < PLAYFIELD_X; x++)
             game_matrix[y + 1][x] = game_matrix[y][x];
     }
 
+    /* Update the field and the subwindow */
     game_playfield_update(game_matrix);
     wrefresh(win_playfield);
 }
 
+/* Scans the visible playfield area for completed lines. If a line is completed, it calls the functions to erase it and shift the pieces, and returns the number of lines erased and the number of points awarded according to the number of erased lines (maximum 4) */
 STATS game_check_playfield(Matrix game_matrix, STATS score) {
 
     int row_count = 0;
@@ -410,6 +448,7 @@ STATS game_check_playfield(Matrix game_matrix, STATS score) {
     return score;
 }
 
+/* Check the rows for any piece above the visible area in the game matrix, returns TRUE if there is a piece, which means that the game is over or FALSE if the game is still not over */
 bool game_check_gameover(Matrix game_matrix) {
     for (int y = 0; y < 4; y++) {
         for (int x = 0; x < PLAYFIELD_X; x++) {
@@ -421,6 +460,7 @@ bool game_check_gameover(Matrix game_matrix) {
     return FALSE;
 }
 
+/* Updates the subwindow stats to display the points and the number of completed liens */
 void game_stats_update(STATS score) {
     
     mvwprintw(win_stats, 3, 3, "Points %05d", score.points);
@@ -429,10 +469,10 @@ void game_stats_update(STATS score) {
 
 }
 
-void gameover_win() {
-    
-    int width = 14;
-    int heigth = 5;
+int game_pause() {
+
+    int width = 12;
+    int heigth = 6;
     int win_gamey, win_gamex;
     getmaxyx(win_border, win_gamey, win_gamex);
 
@@ -449,8 +489,57 @@ void gameover_win() {
         }
     }
 
-    win_gameover = derwin(win_border, heigth, width, win_y, (win_gamex - width)/2);
-    wattron(win_gameover, COLOR_PAIR(9));
+    // Display options
+    win_pause = derwin(win_border, heigth, width, win_y, win_x);
+    wattron(win_pause, COLOR_PAIR(9));
+    box(win_pause, 0, 0);
+    mvwaddstr(win_pause, 0, 3, "PAUSED");
+    mvwaddstr(win_pause, 2, 2, "P Resume");
+    mvwaddstr(win_pause, 3, 3, "Q Quit");
+    wattroff(win_pause, COLOR_PAIR(10));
+    wrefresh(win_pause);
+
+
+    // Get input
+    nodelay(win_game, FALSE);
+    char opt = wgetch(win_game);
+    mvwprintw(win_game, 10, 1, "%c", opt);
+    switch (opt) {
+        case 'p':
+            werase(win_pause);
+            nodelay(win_game, TRUE);
+            delwin(win_pause);
+            return 1;
+        case 'q':
+            return -1;
+    }
+    return 0;
+}
+
+/* Displays the GAME OVER! message to the user */
+void gameover_win() {
+    
+    int width = 14;
+    int heigth = 5;
+    int win_gamey, win_gamex;
+    getmaxyx(win_border, win_gamey, win_gamex);
+
+    int win_y = (win_gamey - heigth)/2;
+    int win_x = (win_gamex - width)/2;
+    
+    // Clear playfield animation
+    for (int y = 0; y < heigth; y++) {
+        for (int x = 0; x < width/2; x++) {
+            wattrset(win_playfield, COLOR_PAIR(0));
+            mvwaddstr(win_playfield, win_y + y, win_x + x, SQUARE);
+            napms(50);
+            wrefresh(win_playfield);
+        }
+    }
+
+    win_gameover = derwin(win_border, heigth, width, win_y, win_x);
+    werase(win_gameover);
+    wattron(win_gameover, COLOR_PAIR(10));
     box(win_gameover, 0, 0);
     char text[] = "GAME OVER!";
     for (int x = 0; x < 10; x++) {
@@ -478,6 +567,24 @@ void game_win_delete(Matrix game_matrix) {
     refresh();
 }
 
+void save_score(STATS score) {
+    
+    time_t current = time(NULL);
+    struct tm t = *localtime(&current);
+
+    char buffer[100];
+    FILE * input = fopen("../files/scores.txt", "a");
+
+    if (input == NULL) {
+        fclose(input);
+        return;
+    }
+
+    fprintf(input, "%d %d %d %d %d %d %d %d\n", score.points, score.lines, t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
+
+    fclose(input);
+}
+
 void init_colors() {
 
     start_color();
@@ -494,7 +601,8 @@ void init_colors() {
     init_pair(6, COLOR_BLACK, COLOR_GREEN); // S
     init_pair(7, COLOR_BLACK, COLOR_RED); // Z
     init_pair(8, COLOR_WHITE, COLOR_WHITE); // Border
-    init_pair(9, COLOR_RED, COLOR_BLACK); // Gameover
+    init_pair(9, COLOR_WHITE, COLOR_BLACK); // Pause
+    init_pair(10, COLOR_RED, COLOR_BLACK); // Gameover
 
 }
 
