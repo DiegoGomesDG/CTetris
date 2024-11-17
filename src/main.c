@@ -5,10 +5,13 @@ int main(int argc, char * argv[]) {
     
     initscr();
     noecho();
+    cbreak();
     curs_set(0);
 
-    int option = menu();
-    switch (option) {
+    
+    while (1) {
+        int option = menu();
+        switch (option) {
 
         case 0: game_play();
                 break;
@@ -19,8 +22,9 @@ int main(int argc, char * argv[]) {
         case 3: endwin(); return 0;
         default: endwin(); return 1;
 
+        }
     }
-
+    
     endwin();
     return 0; 
 

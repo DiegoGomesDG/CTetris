@@ -48,6 +48,7 @@ int menu() {
         menu_highlight_option(menu, options, menuoption);
     } while (key != '\n');
     
+    delwin(menu);
     return menuoption;
 }
 
