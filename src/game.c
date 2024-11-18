@@ -90,11 +90,11 @@ void game_play() {
     }
 
     /* If the Quit Button was not pressed and the game is over, show the gameover window */
+    save_score(score);
     if (returnval != -1) {
         gameover_win();
         napms(1000 * 5);
     }
-    save_score(score);
     game_win_delete(game_matrix);
     
 }
@@ -144,7 +144,7 @@ void game_win_create() {
     }
 
     /* Initialise controls subwindow */
-    win_controls = subwin(win_game, CONTROL_Y, CONTROL_X, (win_gamey - CONTROL_Y)/2 + 6, (win_gamex - BORDER_Y)/2 - CONTROL_X + 1);
+    win_controls = subwin(win_game, CONTROL_Y, CONTROL_X, (win_gamey - CONTROL_Y)/2 + 7, (win_gamex - BORDER_Y)/2 - CONTROL_X + 1);
     if (win_controls == NULL) {
         waddstr(stdscr, "Error generating the win_border!");
         exit(-1);
@@ -488,7 +488,6 @@ bool game_check_gameover(Matrix game_matrix) {
             if (game_matrix[y][x] > 0)
                 return TRUE;
         }
-
     }
     return FALSE;
 }
@@ -611,7 +610,7 @@ void save_score(STATS score) {
     time_t current = time(NULL);
     struct tm t = *localtime(&current);
 
-    FILE * input = fopen("../files/scores.txt", "a");
+    FILE * input = fopen("files/scores.txt", "a");
 
     if (input == NULL) {
         fclose(input);

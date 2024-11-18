@@ -50,6 +50,8 @@ int menu() {
         menu_highlight_option(menu, options, menuoption);
     } while (key != '\n');
     werase(menu);
+    werase(stdscr);
+    keypad(menu, FALSE);
     delwin(menu);
     return menuoption;
 }
