@@ -1,5 +1,6 @@
 #include "menu.h"
 #include "game.h"
+#include "scoreboard.h"
 #include "info.h"
 
 int main(int argc, char * argv[]) {
@@ -15,7 +16,7 @@ int main(int argc, char * argv[]) {
 
         case 0: game_play();
                 break;
-        case 1: // To be implemented
+        case 1: scoreboard();
                 break;
         case 2: win_info_display();
                 break;

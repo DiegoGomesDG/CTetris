@@ -101,7 +101,7 @@ void game_play() {
     }
 
     /* If the Quit Button was not pressed and the game is over, show the gameover window */
-    save_score(score);
+    game_save_score(score);
     if (returnval != -1) {
         gameover_win();
         napms(1000 * 5);
@@ -617,7 +617,7 @@ void game_win_delete(Matrix game_matrix) {
 }
 
 /* Saves the score/statistics of the game and the date into a file */
-void save_score(STATS score) {
+void game_save_score(STATS score) {
     
     time_t current = time(NULL);
     struct tm t = *localtime(&current);
@@ -629,7 +629,9 @@ void save_score(STATS score) {
         return;
     }
 
-    fprintf(input, "%d %d %d %d %d %d %d %d\n", score.points, score.lines, t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
+    if (score.points > 0) {
+        fprintf(input, "%d %d %d %d %d %d %d %d\n", score.points, score.lines, t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
+    }
 
     fclose(input);
 }
@@ -639,15 +641,22 @@ void init_colors() {
 
     start_color();
 
-    init_color(21, 1000, 1000, 0); // Brigth Yellow
-    init_color(51, 1000, 647, 0); // Orange
+    if (can_change_color()) {
+        init_color(21, 1000, 1000, 0); // Brigth Yellow
+        init_color(51, 1000, 647, 0); // Orange
+
+        init_pair(2, COLOR_BLACK, 21); // O
+        init_pair(5, COLOR_BLACK, 51); // L
+    } else {
+        init_pair(2, COLOR_BLACK, COLOR_YELLOW); // O
+        init_pair(5, COLOR_BLACK, COLOR_RED); // L
+    }
+    
 
     init_pair(0, COLOR_BLACK, COLOR_BLACK); // Black
     init_pair(1, COLOR_BLACK, COLOR_CYAN); // I
-    init_pair(2, COLOR_BLACK, 21); // O
     init_pair(3, COLOR_BLACK, COLOR_MAGENTA); // T
     init_pair(4, COLOR_BLACK, COLOR_BLUE); // J
-    init_pair(5, COLOR_BLACK, 51); // L
     init_pair(6, COLOR_BLACK, COLOR_GREEN); // S
     init_pair(7, COLOR_BLACK, COLOR_RED); // Z
     init_pair(8, COLOR_WHITE, COLOR_WHITE); // Border

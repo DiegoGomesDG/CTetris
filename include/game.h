@@ -65,7 +65,7 @@ STATS game_check_playfield(Matrix game_matrix, STATS score);
 int game_pause();
 bool game_check_gameover(Matrix game_matrix);
 void gameover_win();
-void save_score(STATS score);
+void game_save_score(STATS score);
 void init_colors();
 void debug_colors();
 void game_win_delete(Matrix game_array);
