@@ -56,6 +56,16 @@ POSITION tetraminoes[7][4][4] = {
 /* Main game loop */
 void game_play() {
 
+    /* Check for size of the screen */
+    getmaxyx(stdscr, LINES, COLS);
+    if (LINES < (BORDER_Y + 1) || COLS < (BORDER_X + 8 + 2*CONTROL_X)) {
+        attron(A_STANDOUT | A_UNDERLINE);
+        mvwprintw(stdscr, (LINES)/2 - 8, (COLS - 30)/2, "Please make the window bigger!");
+        attroff(A_STANDOUT | A_UNDERLINE);
+        refresh();
+        return;
+    }
+
     /* Essential variables */
     bool status = FALSE;
     int returnval = 1;
@@ -72,6 +82,7 @@ void game_play() {
     game_win_create();
     Matrix game_matrix = game_playfield_matrix(PLAYFIELD_Y, PLAYFIELD_X);
     nodelay(win_game, TRUE);
+    scrollok(win_game, FALSE);
 
     /* Select initial current piece */
     int current = rand() % 7, next;
@@ -117,7 +128,7 @@ void game_win_create() {
     keypad(win_game, true);
 
     /* Create playfield border subwindow */
-    win_border = subwin(win_game, BORDER_Y, BORDER_X, (win_gamey - BORDER_Y)/2, (win_gamex - BORDER_X)/2);
+    win_border = subwin(win_game, BORDER_Y, BORDER_X, (win_gamey - BORDER_Y)/2, (win_gamex - BORDER_X)/2 - 4);
     if (win_border == NULL) {
         waddstr(stdscr, "Error generating the win_border!");
         exit(-1);
@@ -144,7 +155,7 @@ void game_win_create() {
     }
 
     /* Initialise controls subwindow */
-    win_controls = subwin(win_game, CONTROL_Y, CONTROL_X, (win_gamey - CONTROL_Y)/2 + 7, (win_gamex - BORDER_Y)/2 - CONTROL_X + 1);
+    win_controls = subwin(win_game, CONTROL_Y, CONTROL_X, (win_gamey - CONTROL_Y)/2 + 7, (win_gamex - BORDER_Y)/2 - CONTROL_X - 2);
     if (win_controls == NULL) {
         waddstr(stdscr, "Error generating the win_border!");
         exit(-1);
@@ -167,7 +178,7 @@ void game_win_create() {
         mvwaddstr(win_controls, 3 + txt, 2, controls[txt]);
     
     /* Initialise Next Block subwindow */
-    win_next = subwin(win_game, 9, 18, (win_gamey - 9)/2 - 2, (win_gamex - BORDER_Y)/2 + BORDER_X + 5);
+    win_next = subwin(win_game, 9, 18, (win_gamey - 9)/2 - 2, (win_gamex - BORDER_Y)/2 + BORDER_X + 2);
     if (win_next == NULL) {
         waddstr(stdscr, "Error generating the win_next!");
         exit(-1);
@@ -176,7 +187,7 @@ void game_win_create() {
     mvwaddstr(win_next, 1, 4, "NEXT PIECE");
 
     /* Initialise the STATS subwindow */
-    win_stats = subwin(win_game, 7, 18, (win_gamey - 7)/2 - 3, (win_gamex - BORDER_Y)/2 - CONTROL_X + 1);
+    win_stats = subwin(win_game, 7, 18, (win_gamey - 7)/2 - 3, (win_gamex - BORDER_Y)/2 - CONTROL_X - 2);
     if (win_stats == NULL) {
         waddstr(stdscr, "Error generating the win_next!");
         exit(-1);
@@ -592,7 +603,8 @@ void game_win_delete(Matrix game_matrix) {
     for (int i = 0; i < PLAYFIELD_Y; i++)
         free(game_matrix[i]);
     free(game_matrix);
-    
+    werase(win_game);
+    wrefresh(win_game);
     delwin(win_playfield);
     delwin(win_gameover);
     delwin(win_pause);

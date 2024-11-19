@@ -8,14 +8,14 @@ int menu() {
     getmaxyx(stdscr, winy, winx);
     
     // Creates the subwindow
-    WINDOW * menu = subwin(stdscr, WIN_MENUY, WIN_MENUX, (winy - WIN_MENUY)/2, (winx - WIN_MENUX)/2);
-    if (menu == NULL) {
+    WINDOW * win_menu = subwin(stdscr, WIN_MENUY, WIN_MENUX, (winy - WIN_MENUY)/2, (winx - WIN_MENUX)/2);
+    if (win_menu == NULL) {
         waddstr(stdscr, "Error!");
         exit(-1);
     }
 
     // Activate keypad input,
-    keypad(menu, TRUE);
+    keypad(win_menu, TRUE);
     noecho(); // Disables the character appearing in the screen
     
     // Options
@@ -26,16 +26,18 @@ int menu() {
         " Exit "
     };
     
+    do {
     // Draw box around the window
-    box(menu, 0, 0);
+    box(win_menu, 0, 0);
 
     // Add TETRIS title, print menu with first highlighted
-    center_string(menu, 0, "TETRIS");
-    menu_highlight_option(menu, options, menuoption);
+    center_string(win_menu, 0, "TETRIS");
+    menu_highlight_option(win_menu, options, menuoption);
     
     // Highlight Options and Choose the Option using arrow keys
-    do {
-        key = wgetch(menu);
+    
+        getmaxyx(stdscr, winy, winx);
+        key = wgetch(win_menu);
         switch (key) {
             case KEY_DOWN: 
                 menuoption++;
@@ -45,14 +47,20 @@ int menu() {
                 menuoption--;
                 if (menuoption < 0) menuoption = MENU_OPTION_COUNT - 1;
                 break;
+            case KEY_RESIZE:
+                werase(win_menu);
+                wrefresh(win_menu);
+                mvwin(win_menu, (winy - WIN_MENUY)/2, (winx - WIN_MENUX)/2);
+                break;
             default: break;
         }
-        menu_highlight_option(menu, options, menuoption);
+        menu_highlight_option(win_menu, options, menuoption);
     } while (key != '\n');
-    werase(menu);
+    
+    werase(win_menu);
     werase(stdscr);
-    keypad(menu, FALSE);
-    delwin(menu);
+    keypad(win_menu, FALSE);
+    delwin(win_menu);
     return menuoption;
 }
 

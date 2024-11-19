@@ -3,12 +3,11 @@
 #include "info.h"
 
 int main(int argc, char * argv[]) {
-    
+
     initscr();
     noecho();
     cbreak();
     curs_set(0);
-
     
     while (1) {
         int option = menu();
