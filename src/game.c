@@ -79,7 +79,8 @@ void game_play() {
     srand(t * today.tm_hour * today.tm_sec); 
 
     /* Creates game structure */
-    game_win_create();
+    bool init = game_win_create();
+    if (init == FALSE) return;
     Matrix game_matrix = game_playfield_matrix(PLAYFIELD_Y, PLAYFIELD_X);
     nodelay(win_game, TRUE);
     scrollok(win_game, FALSE);
@@ -111,13 +112,13 @@ void game_play() {
 }
 
 /* Creates the game window and initialises the subwindows */
-void game_win_create() {
+bool game_win_create() {
 
     /* Create general game window of same size as the terminal */
     win_game = newwin(0,0,0,0);
     if (win_game == NULL) {
         waddstr(stdscr, "Error generating the win_game!");
-        exit(-1);
+        return FALSE;
     }
 
     /* Get size of the terminal, initialise colors and allow for keypad input */
@@ -131,7 +132,7 @@ void game_win_create() {
     win_border = subwin(win_game, BORDER_Y, BORDER_X, (win_gamey - BORDER_Y)/2, (win_gamex - BORDER_X)/2 - 4);
     if (win_border == NULL) {
         waddstr(stdscr, "Error generating the win_border!");
-        exit(-1);
+        return FALSE;
     }
 
     /* Draw Borders (Left, Right, Bottom) into win_border */
@@ -151,14 +152,14 @@ void game_win_create() {
     win_playfield = derwin(win_border, PLAYFIELD_Y, WIN_PLAYFIELD_X, 0, 2);
     if (win_playfield == NULL) {
         waddstr(stdscr, "Error generating the win_playfield!");
-        exit(-1);
+        return FALSE;
     }
 
     /* Initialise controls subwindow */
     win_controls = subwin(win_game, CONTROL_Y, CONTROL_X, (win_gamey - CONTROL_Y)/2 + 7, (win_gamex - BORDER_Y)/2 - CONTROL_X - 2);
     if (win_controls == NULL) {
         waddstr(stdscr, "Error generating the win_border!");
-        exit(-1);
+        return FALSE;
     }
     box(win_controls, 0, 0);
 
@@ -181,7 +182,7 @@ void game_win_create() {
     win_next = subwin(win_game, 9, 18, (win_gamey - 9)/2 - 2, (win_gamex - BORDER_Y)/2 + BORDER_X + 2);
     if (win_next == NULL) {
         waddstr(stdscr, "Error generating the win_next!");
-        exit(-1);
+        return FALSE;
     }
     box(win_next, 0, 0);
     mvwaddstr(win_next, 1, 4, "NEXT PIECE");
@@ -190,13 +191,14 @@ void game_win_create() {
     win_stats = subwin(win_game, 7, 18, (win_gamey - 7)/2 - 3, (win_gamex - BORDER_Y)/2 - CONTROL_X - 2);
     if (win_stats == NULL) {
         waddstr(stdscr, "Error generating the win_next!");
-        exit(-1);
+        return FALSE;
     }
     box(win_stats, 0, 0);
     mvwaddstr(win_stats, 1, 4, "STATISTICS");
     game_stats_update((STATS){.lines = 0, .points = 0});
 
     wrefresh(win_game);
+    return TRUE;
 
 }
 
@@ -619,18 +621,22 @@ void game_win_delete(Matrix game_matrix) {
 /* Saves the score/statistics of the game and the date into a file */
 void game_save_score(STATS score) {
     
+    /* Get current time*/
     time_t current = time(NULL);
     struct tm t = *localtime(&current);
 
-    FILE * input = fopen("files/scores.txt", "a");
-
+    /* Open File*/
+    FILE * input = fopen(SAVE_SCORES, "a");
     if (input == NULL) {
         fclose(input);
         return;
     }
 
+    /* Avoid registering 0 points and cap the score to 999999 to avoid file handling problems */
     if (score.points > 0) {
-        fprintf(input, "%d %d %d %d %d %d %d %d\n", score.points, score.lines, t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
+        if (score.points >= 1000000) score.points = 999999;
+        if (score.lines >= 100000) score.lines = 99999;
+        fprintf(input, "%06d %05d %04d %02d %02d %02d %02d %02d\n", score.points, score.lines, t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
     }
 
     fclose(input);
@@ -651,7 +657,6 @@ void init_colors() {
         init_pair(2, COLOR_BLACK, COLOR_YELLOW); // O
         init_pair(5, COLOR_BLACK, COLOR_RED); // L
     }
-    
 
     init_pair(0, COLOR_BLACK, COLOR_BLACK); // Black
     init_pair(1, COLOR_BLACK, COLOR_CYAN); // I

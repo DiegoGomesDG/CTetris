@@ -1,13 +1,14 @@
 #ifndef GAME_H
 #define GAME_H
 
+/* ----- Libraries ----- */
 #include <ncurses.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
 
-/* ----- DEFINITION OF CONSTANTS ----- */
+/* ----- Definition of Constants ----- */
 #define SQUARE "  " // One space creates a rectangle, two a square
 #define PLAYFIELD_Y 24 // Actual heigth
 #define PLAYFIELD_X 10 // Actual width
@@ -16,8 +17,9 @@
 #define BORDER_X WIN_PLAYFIELD_X + 4 // Width of the border
 #define CONTROL_Y 12 // Heigth of the controls window
 #define CONTROL_X 18 // Width of the controls
+#define SAVE_SCORES "./files/games.txt" // Path for Saving Scores
 
-/* ----- WINDOWS GLOBAL VARIABLES ----- */
+/* ----- Windows Global Variables ----- */
 WINDOW * win_game; // Main Game Window
 WINDOW * win_border; // Subwindow that defines the border of the playfield
 WINDOW * win_playfield; // Actual playfield subwindow
@@ -27,7 +29,7 @@ WINDOW * win_stats; // Subwindow that display the score/statistics
 WINDOW * win_pause; // Subwindow which display options when the user pauses the game
 WINDOW * win_gameover; // Subwindow that shows that the game is over
 
-/* ----- STRUCTURES AND DATATYPES ----- */
+/* ----- Structures and Datatypes ----- */
 /* Structure that represents the score/statistics of the game */
 typedef struct STATS {
     unsigned int points;
@@ -47,10 +49,10 @@ typedef int** Matrix;
 /* Global variable that defines the pieces in game.c */
 extern POSITION tetraminoes[7][4][4];
 
-/* ----- FUNCTION DEFINITIONS ----- */
+/* ----- Function Prototypes ----- */
 /* For a brief description, refer to the comments in game.c above each function definition */
 void game_play();
-void game_win_create();
+bool game_win_create();
 Matrix game_playfield_matrix(int height, int width);
 void game_playfield_update(Matrix game_matrix);
 void game_draw_piece(int y, int x, int type, int orientation, int del);

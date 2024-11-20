@@ -1,14 +1,12 @@
 #include "menu.h"
 #include "info.h"
 
-WINDOW * win_info;
-
 /* Display the information */
 void win_info_display() {
 
     /* Create window */
     getmaxyx(stdscr, COLS, LINES);
-    win_info = newwin(COLS - BORDER, LINES - BORDER, BORDER/2, BORDER/2);
+    WINDOW * win_info = newwin(COLS - BORDER, LINES - BORDER, BORDER/2, BORDER/2);
     if (win_info == NULL) {
         wprintw(stdscr, "Error creating win_info");
         exit(-1);
@@ -26,12 +24,12 @@ void win_info_display() {
     while (1) {
         input = wgetch(win_info);
         switch (input) {
-            case 27:
+            case 27: /* ESCAPE */
                 werase(win_info);
                 wrefresh(win_info);
                 delwin(win_info);
                 return;
-            case ' ':
+            case ' ': /* SPACE */
                 page++;
                 if (page > 2) page = 0;
                 break;
@@ -97,8 +95,8 @@ void pages(WINDOW * win, int page, int width, int heigth) {
     }
 
     if (page == 1) {
-        centered_title(win_info, 0, " QUICK GUIDE ");
-        text_wrapper(win_info, 2, width, "Tetris is a classic game, originally created in 1985. In Tetris, you should complete lines by moving differently shaped pieces tetrominoes, which slowly descend into the playing field. When a line is completed, the line disappers and the pieces on top drop one rank, and you get points. Multiple lines can be completed at once, which grants more points. The game ends when the uncleared lines reach the top and a piece gets locked outside of the playfield. The longer the player can delay the gameover, the higher their score will be.");
+        centered_title(win, 0, " QUICK GUIDE ");
+        text_wrapper(win, 2, width, "Tetris is a classic game, originally created in 1985. In Tetris, you should complete lines by moving differently shaped pieces tetrominoes, which slowly descend into the playing field. When a line is completed, the line disappers and the pieces on top drop one rank, and you get points. Multiple lines can be completed at once, which grants more points. The game ends when the uncleared lines reach the top and a piece gets locked outside of the playfield. The longer the player can delay the gameover, the higher their score will be.");
 
         center_string(win, heigth - 2, "SPACE - Switch Page ");
         center_string(win, heigth - 1, "ESC - Exit");
@@ -107,14 +105,14 @@ void pages(WINDOW * win, int page, int width, int heigth) {
     }
 
     if (page == 2) {
-        centered_title(win_info, 0, " CONTROLS ");
-        center_string(win_info, 2, "<-  Move Left");
-        center_string(win_info, 3, "->  Move Right");
-        center_string(win_info, 4, "v   Move Down");
-        center_string(win_info, 5, "_   Hard Drop");
-        center_string(win_info, 6, "^   Rotate   ");
-        center_string(win_info, 7, "P   Pause    ");
-        center_string(win_info, 8, "Q   Quit Game");
+        centered_title(win, 0, " CONTROLS ");
+        center_string(win, 2, "<-  Move Left");
+        center_string(win, 3, "->  Move Right");
+        center_string(win, 4, "v   Move Down");
+        center_string(win, 5, "_   Hard Drop");
+        center_string(win, 6, "^   Rotate   ");
+        center_string(win, 7, "P   Pause    ");
+        center_string(win, 8, "Q   Quit Game");
 
         center_string(win, heigth - 2, "SPACE - Switch Page ");
         center_string(win, heigth - 1, "ESC - Exit");
