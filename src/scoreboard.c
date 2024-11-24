@@ -131,7 +131,7 @@ void print_sort_title(WINDOW * win, int row, int sort) {
 
     char * sort_types[] = {
         "Top Scores", /* 0 */
-        "Worse Scores", /* 1 */
+        "Worst Scores", /* 1 */
         "Most Recent Games", /* 2 */
         "Oldest Games" /* 3 */
     };

@@ -43,5 +43,4 @@ NODE * load_sorted_list(NODE * head, int sort, int len);
 bool sort_file(WINDOW * win, char * filename, char * out, int * len);
 int sort_compare(const void* a, const void* b);
 
-
 #endif

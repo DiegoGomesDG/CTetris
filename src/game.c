@@ -104,11 +104,39 @@ void game_play() {
     /* If the Quit Button was not pressed and the game is over, show the gameover window */
     game_save_score(score);
     if (returnval != -1) {
-        gameover_win();
+        game_over_display();
         napms(1000 * 5);
     }
     game_win_delete(game_matrix);
     
+}
+
+/* Initialises color pairs that will be used to color the pieces*/
+void init_colors() {
+
+    start_color();
+
+    if (can_change_color()) {
+        init_color(21, 1000, 1000, 0); // Brigth Yellow
+        init_color(51, 1000, 647, 0); // Orange
+
+        init_pair(2, COLOR_BLACK, 21); // O
+        init_pair(5, COLOR_BLACK, 51); // L
+    } else {
+        init_pair(2, COLOR_BLACK, COLOR_YELLOW); // O
+        init_pair(5, COLOR_BLACK, COLOR_RED); // L
+    }
+
+    init_pair(0, COLOR_BLACK, COLOR_BLACK); // Black
+    init_pair(1, COLOR_BLACK, COLOR_CYAN); // I
+    init_pair(3, COLOR_BLACK, COLOR_MAGENTA); // T
+    init_pair(4, COLOR_BLACK, COLOR_BLUE); // J
+    init_pair(6, COLOR_BLACK, COLOR_GREEN); // S
+    init_pair(7, COLOR_BLACK, COLOR_RED); // Z
+    init_pair(8, COLOR_WHITE, COLOR_WHITE); // Border
+    init_pair(9, COLOR_WHITE, COLOR_BLACK); // Pause
+    init_pair(10, COLOR_RED, COLOR_BLACK); // Gameover
+
 }
 
 /* Creates the game window and initialises the subwindows */
@@ -156,7 +184,7 @@ bool game_win_create() {
     }
 
     /* Initialise controls subwindow */
-    win_controls = subwin(win_game, CONTROL_Y, CONTROL_X, (win_gamey - CONTROL_Y)/2 + 7, (win_gamex - BORDER_Y)/2 - CONTROL_X - 2);
+    win_controls = subwin(win_game, CONTROL_Y, CONTROL_X, (win_gamey - CONTROL_Y)/2 + 7, (win_gamex - BORDER_X)/2 - CONTROL_X - 6);
     if (win_controls == NULL) {
         waddstr(stdscr, "Error generating the win_border!");
         return FALSE;
@@ -179,7 +207,7 @@ bool game_win_create() {
         mvwaddstr(win_controls, 3 + txt, 2, controls[txt]);
     
     /* Initialise Next Block subwindow */
-    win_next = subwin(win_game, 9, 18, (win_gamey - 9)/2 - 2, (win_gamex - BORDER_Y)/2 + BORDER_X + 2);
+    win_next = subwin(win_game, 9, 18, (win_gamey - 9)/2 - 2, (win_gamex - BORDER_X)/2 + BORDER_X - 2);
     if (win_next == NULL) {
         waddstr(stdscr, "Error generating the win_next!");
         return FALSE;
@@ -188,7 +216,7 @@ bool game_win_create() {
     mvwaddstr(win_next, 1, 4, "NEXT PIECE");
 
     /* Initialise the STATS subwindow */
-    win_stats = subwin(win_game, 7, 18, (win_gamey - 7)/2 - 3, (win_gamex - BORDER_Y)/2 - CONTROL_X - 2);
+    win_stats = subwin(win_game, 7, 18, (win_gamey - 7)/2 - 3, (win_gamex - BORDER_X)/2 - CONTROL_X - 6);
     if (win_stats == NULL) {
         waddstr(stdscr, "Error generating the win_next!");
         return FALSE;
@@ -287,16 +315,6 @@ bool game_check_position(Matrix game_matrix, int y, int x, int type, int orienta
     }
     /* mvwprintw(win_game, 8, 1, "Allowed: TRUE "); Uncomment for debugging */
     return TRUE;
-}
-
-/* Writes the position of the piece into the matrix */
-void game_lock_piece(Matrix game_matrix, int y, int x, int type, int orientation) {
-    POSITION pos;
-    
-    for (int i = 0; i < 4; i++) {
-        pos = tetraminoes[type][orientation][i];
-        game_matrix[y + pos.y][x + pos.x] = type + 1;
-    }
 }
 
 /* Core function that is responsible for dropping the piece. Receives input for the pieces movement or for pausing and quitting the game. Returns a status or the points scored by executing a soft or hard drop */
@@ -426,13 +444,23 @@ int game_drop_piece(Matrix game_matrix, int type) {
 
 }
 
-/* Takes the Game Matrix and a row number. Returns TRUE if the row is full, FALSE otherwise*/
+/* Writes the position of the piece into the matrix */
+void game_lock_piece(Matrix game_matrix, int y, int x, int type, int orientation) {
+    POSITION pos;
+    
+    for (int i = 0; i < 4; i++) {
+        pos = tetraminoes[type][orientation][i];
+        game_matrix[y + pos.y][x + pos.x] = type + 1;
+    }
+}
+
+/* Receives the Game Matrix and a row number. Returns TRUE if the row is full, FALSE otherwise*/
 bool game_check_row(Matrix game_matrix, int row) {
     
     /* Buffer rows can't have pieces */
     if (row > PLAYFIELD_Y) return FALSE;
 
-    /* Returns FALSE if there is one empty row, TRUE if the entire row is different than 0*/
+    /* Returns FALSE if there is one empty space, TRUE if the entire row is different than 0*/
     for (int x = 0; x < PLAYFIELD_X; x++) {
         if (game_matrix[row][x] == 0)
             return FALSE;
@@ -448,7 +476,7 @@ void game_remove_row(Matrix game_matrix, int row) {
     for (int x = 0; x < PLAYFIELD_X; x++)
         game_matrix[row][x] = 0;
 
-    /* Shifts all the above */
+    /* Shifts the above rows */
     for (int y = row - 1; y > 0; y--) {
         for (int x = 0; x < PLAYFIELD_X; x++)
             game_matrix[y + 1][x] = game_matrix[y][x];
@@ -491,18 +519,6 @@ STATS game_check_playfield(Matrix game_matrix, STATS score) {
             break;
     }
     return score;
-}
-
-/* Check the rows for any piece above the visible area in the game matrix, returns TRUE if there is a piece, which means that the game is over or FALSE if the game is still not over */
-bool game_check_gameover(Matrix game_matrix) {
-   
-    for (int y = 0; y < 4; y++) {
-        for (int x = 0; x < PLAYFIELD_X; x++) {
-            if (game_matrix[y][x] > 0)
-                return TRUE;
-        }
-    }
-    return FALSE;
 }
 
 /* Updates the subwindow stats to display the points and the number of completed liens */
@@ -565,8 +581,20 @@ int game_pause() {
     return 1;
 }
 
+/* Check the rows for any piece above the visible area in the game matrix, returns TRUE if there is a piece, which means that the game is over or FALSE if the game is still not over */
+bool game_check_gameover(Matrix game_matrix) {
+   
+    for (int y = 0; y < 4; y++) {
+        for (int x = 0; x < PLAYFIELD_X; x++) {
+            if (game_matrix[y][x] > 0)
+                return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 /* Displays the GAME OVER! message to the user */
-void gameover_win() {
+void game_over_display() {
     
     int width = 14;
     int heigth = 5;
@@ -599,25 +627,6 @@ void gameover_win() {
     
 }
 
-/* Frees the dynamic allocated matrix and deletes the windows and subwindows */
-void game_win_delete(Matrix game_matrix) {
-    
-    for (int i = 0; i < PLAYFIELD_Y; i++)
-        free(game_matrix[i]);
-    free(game_matrix);
-    werase(win_game);
-    wrefresh(win_game);
-    delwin(win_playfield);
-    delwin(win_gameover);
-    delwin(win_pause);
-    delwin(win_border);
-    delwin(win_stats);
-    delwin(win_next);
-    delwin(win_controls);
-    delwin(win_game);
-    refresh();
-}
-
 /* Saves the score/statistics of the game and the date into a file */
 void game_save_score(STATS score) {
     
@@ -642,39 +651,21 @@ void game_save_score(STATS score) {
     fclose(input);
 }
 
-/* Initialises color pairs that will be used to color the pieces*/
-void init_colors() {
-
-    start_color();
-
-    if (can_change_color()) {
-        init_color(21, 1000, 1000, 0); // Brigth Yellow
-        init_color(51, 1000, 647, 0); // Orange
-
-        init_pair(2, COLOR_BLACK, 21); // O
-        init_pair(5, COLOR_BLACK, 51); // L
-    } else {
-        init_pair(2, COLOR_BLACK, COLOR_YELLOW); // O
-        init_pair(5, COLOR_BLACK, COLOR_RED); // L
-    }
-
-    init_pair(0, COLOR_BLACK, COLOR_BLACK); // Black
-    init_pair(1, COLOR_BLACK, COLOR_CYAN); // I
-    init_pair(3, COLOR_BLACK, COLOR_MAGENTA); // T
-    init_pair(4, COLOR_BLACK, COLOR_BLUE); // J
-    init_pair(6, COLOR_BLACK, COLOR_GREEN); // S
-    init_pair(7, COLOR_BLACK, COLOR_RED); // Z
-    init_pair(8, COLOR_WHITE, COLOR_WHITE); // Border
-    init_pair(9, COLOR_WHITE, COLOR_BLACK); // Pause
-    init_pair(10, COLOR_RED, COLOR_BLACK); // Gameover
-
-}
-
-/* Debug function to display all color pairs */
-void debug_colors() {
-    for (int i = 0; i <= 10; i++) {
-        wattron(win_game, COLOR_PAIR(i));
-        mvwaddstr(win_game, i, 1, SQUARE);
-        wattroff(win_game, COLOR_PAIR(i));
-    }
+/* Frees the dynamic allocated matrix and deletes the windows and subwindows */
+void game_win_delete(Matrix game_matrix) {
+    
+    for (int i = 0; i < PLAYFIELD_Y; i++)
+        free(game_matrix[i]);
+    free(game_matrix);
+    werase(win_game);
+    wrefresh(win_game);
+    delwin(win_playfield);
+    delwin(win_gameover);
+    delwin(win_pause);
+    delwin(win_border);
+    delwin(win_stats);
+    delwin(win_next);
+    delwin(win_controls);
+    delwin(win_game);
+    refresh();
 }

@@ -25,24 +25,31 @@ int menu() {
         " Info ",
         " Exit "
     };
-    
+
     do {
     // Draw box around the window
     box(win_menu, 0, 0);
 
-    // Add TETRIS title, print menu with first highlighted
+    // Add TETRIS title, print menu with first highlighted and commands
     center_string(win_menu, 0, "TETRIS");
     menu_highlight_option(win_menu, options, menuoption);
     
+    int y_center = getmaxy(stdscr)/2; 
+    center_string(stdscr, y_center + 6, "Use ARROW keys to navigate");
+    center_string(stdscr, y_center + 7, "Press ENTER to select");
+    refresh();
+
     // Highlight Options and Choose the Option using arrow keys
     
         getmaxyx(stdscr, winy, winx);
         key = wgetch(win_menu);
         switch (key) {
+            /* Select one option up */
             case KEY_DOWN: 
                 menuoption++;
                 if (menuoption > MENU_OPTION_COUNT - 1) menuoption = 0;
                 break;
+            /* Select one option down */
             case KEY_UP:
                 menuoption--;
                 if (menuoption < 0) menuoption = MENU_OPTION_COUNT - 1;
@@ -50,6 +57,7 @@ int menu() {
             case KEY_RESIZE:
                 werase(win_menu);
                 wrefresh(win_menu);
+                erase();
                 mvwin(win_menu, (winy - WIN_MENUY)/2, (winx - WIN_MENUX)/2);
                 break;
             default: break;

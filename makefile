@@ -10,8 +10,7 @@ LIBS = -lncurses
 ENAME = ctetris
 
 # Target to check and create the directory if it doesn't exist
-check_dir:
-	@[ -d $(FDIR) ] || mkdir -p $(FDIR)
+
 
 _DEPS = game.h menu.h scoreboard.h info.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
@@ -21,6 +20,8 @@ SRC = $(patsubst %,$(SDIR)/%,$(_SRC))
 
 all: $(SRC) $(DEPS)
 	$(CC) -o $(ENAME) $(SRC) $(CFLAGS) $(LIBS)
+	@echo "Successful compilation: $(ENAME) is ready!"
+	@[ -d $(FDIR) ] || mkdir -p $(FDIR)
+
 
 .PHONY: clean
-
