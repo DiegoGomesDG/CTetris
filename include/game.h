@@ -17,7 +17,7 @@
 #define BORDER_X WIN_PLAYFIELD_X + 4 // Width of the border
 #define CONTROL_Y 12 // Heigth of the controls window
 #define CONTROL_X 18 // Width of the controls
-#define SAVE_SCORES "./files/games.txt" // Path for Saving Scores
+#define SAVE_SCORES "./games.txt" // Path for Saving Scores
 
 /* ----- Windows Global Variables ----- */
 WINDOW * win_game; // Main Game Window

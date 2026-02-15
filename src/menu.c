@@ -55,10 +55,16 @@ int menu() {
                 if (menuoption < 0) menuoption = MENU_OPTION_COUNT - 1;
                 break;
             case KEY_RESIZE:
-                werase(win_menu);
-                wrefresh(win_menu);
+                getmaxyx(stdscr, winy, winx);
+                delwin(win_menu);
                 erase();
-                mvwin(win_menu, (winy - WIN_MENUY)/2, (winx - WIN_MENUX)/2);
+                refresh();
+                win_menu = subwin(stdscr, WIN_MENUY, WIN_MENUX, (winy - WIN_MENUY)/2, (winx - WIN_MENUX)/2);
+                if (win_menu == NULL) {
+                    waddstr(stdscr, "Error!");
+                    exit(-1);
+                }
+                keypad(win_menu, TRUE);
                 break;
             default: break;
         }

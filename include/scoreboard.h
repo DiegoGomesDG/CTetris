@@ -9,8 +9,8 @@
 #include <time.h>
 
 /* ----- Relative File Path ----- */
-#define DATE_SORTED_FILE "./files/games.txt"
-#define POINTS_SORTED_FILE "./files/scores_sorted.txt"
+#define DATE_SORTED_FILE "./games.txt"
+#define POINTS_SORTED_FILE "./scores_sorted.txt"
 #define ROWS 10
 
 /* GAME_DATA struct */
